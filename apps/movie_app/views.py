@@ -5,12 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from .serializer import MovieGenreSerializer
+from .permissions import IsAdminOrReadOnly
 from.models import MovieGenre
 
 
 @extend_schema(request=MovieGenreSerializer, responses=MovieGenreSerializer, tags=['Movie Genre'])
 class MovieGenreViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
     def list(self, request):
         queryset = MovieGenre.objects.all()
@@ -35,11 +36,11 @@ class MovieGenreViewSet(ViewSet):
         serializer = MovieGenreSerializer(data=request.data, partial=True)
         if serializer.is_valid():
             serializer.update(instance=instance, validated_data=serializer.validated_data)
-            return Response('Updated successfully', status=status.HTTP_200_OK)
+            return Response({'response': 'Updated successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk):
         instance = get_object_or_404(MovieGenre, pk=pk)
         self.check_object_permissions(request, instance)
         instance.delete()
-        return Response('Deleted successfully', status=status.HTTP_200_OK)
+        return Response({'response': 'Deleted successfully'}, status=status.HTTP_200_OK)
