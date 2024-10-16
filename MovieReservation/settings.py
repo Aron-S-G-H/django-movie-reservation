@@ -21,7 +21,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     # My apps
-    'apps.account_app.apps.AccountAppConfig'
+    'apps.account_app.apps.AccountAppConfig',
+    'apps.movie_app.apps.MovieAppConfig',
 ]
 
 MIDDLEWARE = [
@@ -107,4 +108,3 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "UPDATE_LAST_LOGIN": True,
 }
-
