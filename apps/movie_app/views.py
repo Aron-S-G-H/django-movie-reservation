@@ -52,12 +52,12 @@ class MovieViewSet(ViewSet):
 
     def list(self, request):
         queryset = Movie.objects.all()
-        serializer = MovieSerializer(queryset, many=True)
+        serializer = MovieSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
         queryset = get_object_or_404(Movie, pk=pk)
-        serializer = MovieSerializer(queryset)
+        serializer = MovieSerializer(queryset, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request):

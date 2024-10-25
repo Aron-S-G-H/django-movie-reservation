@@ -42,3 +42,18 @@ class Movie(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class MoviePoster(models.Model):
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='posters')
+    poster = models.ImageField(upload_to='posters', width_field='poster_width', height_field='poster_height')
+    poster_width = models.PositiveSmallIntegerField(null=True, blank=True)
+    poster_height = models.PositiveSmallIntegerField(null=True, blank=True)
+    size = models.FloatField(blank=True, help_text='in kilobytes')
+
+    def save(self, *args, **kwargs):
+        self.size = self.poster.size / 1000
+        super(MoviePoster, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.movie.title
