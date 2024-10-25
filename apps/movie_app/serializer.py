@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MovieGenre, Movie
+from .models import MovieGenre, Movie, Showtime
 from drf_spectacular.utils import extend_schema_field
 
 
@@ -11,8 +11,15 @@ class MovieGenreSerializer(serializers.ModelSerializer):
         extra_kwargs = {'description': {'required': True}}
 
 
+class MovieShowtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Showtime
+        fields = ('show_date', 'start_time')
+
+
 class MovieSerializer(serializers.ModelSerializer):
     poster_links = serializers.SerializerMethodField(source='posters')
+    show_times = MovieShowtimeSerializer(many=True, source='showtimes')
 
     class Meta:
         model = Movie

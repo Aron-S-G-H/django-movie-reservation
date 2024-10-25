@@ -57,3 +57,12 @@ class MoviePoster(models.Model):
 
     def __str__(self):
         return self.movie.title
+
+
+class Showtime(models.Model):
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='showtimes')
+    show_date = models.DateField()
+    start_time = models.TimeField()
+
+    def __str__(self):
+        return f"{self.movie.title} at {self.start_time} on {self.show_date}"
