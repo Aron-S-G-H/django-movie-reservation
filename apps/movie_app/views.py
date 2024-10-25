@@ -3,9 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from .serializer import MovieGenreSerializer, MovieSerializer
 from .permissions import IsAdminOrReadOnly
+from rest_framework.decorators import action
+from django.core.validators import ValidationError
 from.models import MovieGenre, Movie
 
 
@@ -48,7 +50,7 @@ class MovieGenreViewSet(ViewSet):
 
 @extend_schema(request=MovieSerializer, responses=MovieSerializer, tags=['Movie'])
 class MovieViewSet(ViewSet):
-    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
+    # permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
     def list(self, request):
         queryset = Movie.objects.all()
@@ -81,3 +83,29 @@ class MovieViewSet(ViewSet):
         self.check_object_permissions(request, instance)
         instance.delete()
         return Response({'response': 'Deleted successfully'}, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='date',
+                type=OpenApiTypes.DATE,
+                required=True,
+                location=OpenApiParameter.QUERY,
+                description="Date to filter movies with showtimes",
+            )
+        ],
+    )
+    @action(methods=['GET'], url_path='showtime', url_name='showtime', detail=False)
+    def get_movie_with_showtimes(self, request):
+        date = request.query_params.get('date', None)
+        if date:
+            try:
+                movies = Movie.objects.filter(showtimes__show_date=date).distinct()
+                serializer = MovieSerializer(movies, many=True, context={'request': request})
+                return Response(serializer.data)
+            except ValidationError:
+                pass
+        return Response(
+            {"error": "Please provide a valid date in the format YYYY-MM-DD"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
