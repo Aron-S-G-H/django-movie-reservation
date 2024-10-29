@@ -66,3 +66,13 @@ class Showtime(models.Model):
 
     def __str__(self):
         return f"{self.movie.title} at {self.start_time} on {self.show_date}"
+
+
+class Seat(models.Model):
+    showtime = models.ForeignKey(Showtime, on_delete=models.CASCADE, related_name='seats')
+    seat_number = models.PositiveSmallIntegerField()
+    is_reserved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Seat {self.seat_number} for {self.showtime}"
+

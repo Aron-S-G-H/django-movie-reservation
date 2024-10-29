@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MovieGenre, Movie, Showtime
+from .models import MovieGenre, Movie, Showtime, Seat
 from drf_spectacular.utils import extend_schema_field
 
 
@@ -14,7 +14,7 @@ class MovieGenreSerializer(serializers.ModelSerializer):
 class MovieShowtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Showtime
-        fields = ('show_date', 'start_time')
+        fields = ('id', 'show_date', 'start_time')
 
 
 class MovieSerializer(serializers.ModelSerializer):
@@ -35,3 +35,9 @@ class MovieSerializer(serializers.ModelSerializer):
         posters = obj.posters.all()
         posters_url = [request.build_absolute_uri(image.poster.url) for image in posters]
         return posters_url
+
+
+class SeatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Seat
+        fields = ['id', 'seat_number']

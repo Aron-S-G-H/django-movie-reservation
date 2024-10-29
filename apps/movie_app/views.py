@@ -4,11 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import MovieGenreSerializer, MovieSerializer
+from .serializer import MovieGenreSerializer, MovieSerializer, SeatSerializer
 from .permissions import IsAdminOrReadOnly
 from rest_framework.decorators import action
 from django.core.validators import ValidationError
-from.models import MovieGenre, Movie
+from.models import MovieGenre, Movie, Showtime, Seat
 
 
 @extend_schema(request=MovieGenreSerializer, responses=MovieGenreSerializer, tags=['Movie Genre'])
@@ -109,3 +109,13 @@ class MovieViewSet(ViewSet):
             {"error": "Please provide a valid date in the format YYYY-MM-DD"},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@extend_schema(tags=['ShowTime'])
+class ShowTimeViewSet(ViewSet):
+    @action(detail=True, methods=['GET'], url_path='available_seats', url_name='available_seat')
+    def available_seats(self, request, pk=None):
+        showtime = get_object_or_404(Showtime, pk=pk)
+        available_seats = Seat.objects.filter(showtime=showtime, is_reserved=False)
+        serializer = SeatSerializer(available_seats, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
