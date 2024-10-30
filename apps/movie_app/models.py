@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from apps.account_app.models import CustomUser
 
 
 class BaseModel(models.Model):
@@ -67,6 +68,9 @@ class Showtime(models.Model):
     def __str__(self):
         return f"{self.movie.title} at {self.start_time} on {self.show_date}"
 
+    def get_date(self):
+        return f"{self.start_time} - {self.show_date}"
+
 
 class Seat(models.Model):
     showtime = models.ForeignKey(Showtime, on_delete=models.CASCADE, related_name='seats')
@@ -76,3 +80,16 @@ class Seat(models.Model):
     def __str__(self):
         return f"Seat {self.seat_number} for {self.showtime}"
 
+
+class Reservation(BaseModel):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reservations')
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reservations')
+    showtime = models.ForeignKey(Showtime, on_delete=models.CASCADE, related_name='reservations')
+    seats = models.ManyToManyField(Seat, related_name='reservation')
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [models.UniqueConstraint(fields=['user', 'movie', 'showtime'], name='user_reservation')]
+
+    def __str__(self):
+        return f"Reservation by {self.user} for {self.movie} | {self.showtime.get_date()}"

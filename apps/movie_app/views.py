@@ -4,11 +4,12 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
-from .serializer import MovieGenreSerializer, MovieSerializer, SeatSerializer
+from .serializer import MovieGenreSerializer, MovieSerializer, SeatSerializer, ReservationSerializer
 from .permissions import IsAdminOrReadOnly
 from rest_framework.decorators import action
 from django.core.validators import ValidationError
-from.models import MovieGenre, Movie, Showtime, Seat
+from django.utils import timezone
+from.models import MovieGenre, Movie, Showtime, Seat, Reservation
 
 
 @extend_schema(request=MovieGenreSerializer, responses=MovieGenreSerializer, tags=['Movie Genre'])
@@ -119,3 +120,60 @@ class ShowTimeViewSet(ViewSet):
         available_seats = Seat.objects.filter(showtime=showtime, is_reserved=False)
         serializer = SeatSerializer(available_seats, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['Reservation'], responses=ReservationSerializer)
+class ReservationViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        queryset = Reservation.objects.all()
+        serializer = ReservationSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request):
+        showtime_id = request.data.get('showtime', None)
+        seat_ids = request.data.get('seats', [])
+
+        if not showtime_id:
+            return Response({'error': 'At least a showtime must be selected'}, status=status.HTTP_400_BAD_REQUEST)
+        if not seat_ids:
+            return Response({"error": "At least one seat must be selected."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            showtime = Showtime.objects.get(id=showtime_id)
+        except Showtime.DoesNotExist:
+            return Response({'error': f'showtime with id {showtime_id} does not exists'})
+
+        reservation = Reservation.objects.create(
+            user=request.user,
+            movie=showtime.movie,
+            showtime=showtime,
+        )
+        for seat_id in seat_ids:
+            try:
+                seat = Seat.objects.get(id=seat_id)
+                seat.is_reserved = True
+                seat.save()
+            except Seat.DoesNotExist:
+                return Response({'error': f'seat with id {seat_id} does not exists'})
+            reservation.seats.add(seat)
+
+        serializer = ReservationSerializer(reservation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(methods=['DELETE'], url_path='cancel', url_name='cancel_reservation', detail=False)
+    def cancel_reservation(self, request, pk=None):
+        reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
+
+        if reservation.showtime.show_date < timezone.now().date():
+            return Response({"error": "Cannot cancel a reservation for a past showtime."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        for seat in reservation.seats.all():
+            seat.is_reserved = False
+            seat.save()
+
+        reservation.delete()
+
+        return Response({"message": "Reservation canceled successfully."}, status=status.HTTP_204_NO_CONTENT)

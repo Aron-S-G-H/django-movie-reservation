@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MovieGenre, Movie, Showtime, Seat
+from .models import MovieGenre, Movie, Showtime, Seat, Reservation
 from drf_spectacular.utils import extend_schema_field
 
 
@@ -41,3 +41,17 @@ class SeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seat
         fields = ['id', 'seat_number']
+
+
+class ReservationSerializer(serializers.ModelSerializer):
+    movie = serializers.SlugRelatedField(slug_field='title', read_only=True)
+    user = serializers.SerializerMethodField()
+    seats = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    showtime = MovieShowtimeSerializer()
+
+    class Meta:
+        model = Reservation
+        exclude = ('created_at', 'updated_at')
+
+    def get_user(self, obj):
+        return {'id': obj.user.id, 'full_name': obj.user.get_full_name()}
