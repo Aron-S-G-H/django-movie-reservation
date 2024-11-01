@@ -55,3 +55,12 @@ class ReservationSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         return {'id': obj.user.id, 'full_name': obj.user.get_full_name()}
+
+
+class ReservationCreateSerializer(serializers.Serializer):
+    showtime_id = serializers.IntegerField(required=True, help_text="Showtime ID")
+    seats = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True,
+        help_text="List of seat IDs"
+    )
