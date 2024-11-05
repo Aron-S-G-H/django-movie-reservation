@@ -4,35 +4,7 @@ from django.contrib.auth import authenticate
 from .utils import validate_and_format_phone
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        exclude = ('user_permissions', 'groups')
-        read_only_fields = ('id', 'is_active', 'is_staff', 'is_superuser', 'last_login', 'date_joined')
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-        }
-
-
-class UserRegisterSerializer(serializers.ModelSerializer):
-    confirm_password = serializers.CharField(max_length=128, required=True)
-
-    class Meta:
-        model = CustomUser
-        fields = ('first_name', 'last_name', 'email', 'phone', 'password', 'confirm_password')
-
-    def create(self, validated_data):
-        user = CustomUser.objects.create_user(
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            phone=validated_data['phone'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-        )
-        return user
-
+class BaseUserSerializer(serializers.ModelSerializer):
     def validate_phone(self, value):
         try:
             phone = validate_and_format_phone(phone_number=value)
@@ -50,17 +22,70 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Last name must contain only alphabetic characters')
         return value
 
+
+class UserSerializer(BaseUserSerializer):
+    class Meta:
+        model = CustomUser
+        exclude = ('user_permissions', 'groups')
+        read_only_fields = ('id', 'is_active', 'is_staff', 'is_superuser', 'last_login', 'date_joined')
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+        }
+
+    def validate_phone(self, value):
+        return super().validate_phone(value)
+
+    def validate_first_name(self, value):
+        return super().validate_first_name(value)
+
+    def validate_last_name(self, value):
+        return super().validate_last_name(value)
+
+
+class UserRegisterSerializer(BaseUserSerializer):
+    confirm_password = serializers.CharField(max_length=128, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('first_name', 'last_name', 'email', 'phone', 'password', 'confirm_password')
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+        }
+
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            phone=validated_data['phone'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+        )
+        return user
+
+    def validate_phone(self, value):
+        return super().validate_phone(value)
+
+    def validate_first_name(self, value):
+        return super().validate_first_name(value)
+
+    def validate_last_name(self, value):
+        return super().validate_last_name(value)
+
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({'password': 'Password fields didnt match'})
+        self._check_invalid_fields(attrs)
+        return attrs
 
+    def _check_invalid_fields(self, attrs):
         allowed_fields = set(self.fields)
         received_fields = set(self.initial_data.keys())
         invalid_fields = received_fields - allowed_fields
         if invalid_fields:
             raise serializers.ValidationError(f"Invalid fields: {', '.join(invalid_fields)}")
-
-        return attrs
 
 
 class UserLoginSerializer(serializers.Serializer):

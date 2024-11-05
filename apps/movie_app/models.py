@@ -15,7 +15,7 @@ class MovieGenre(BaseModel):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
     slug = models.SlugField(max_length=128, unique=True, blank=True)
-    is_active = models.BooleanField(db_default=True)
+    is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:

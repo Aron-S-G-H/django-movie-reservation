@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from .serializer import MovieGenreSerializer, MovieSerializer, SeatSerializer, ReservationSerializer
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, ReservationCustomPermission
 from django.core.validators import ValidationError
 from django.utils import timezone
 from . import decorators
@@ -14,7 +14,7 @@ from.models import MovieGenre, Movie, Showtime, Seat, Reservation
 
 @extend_schema(tags=['Movie Genre'])
 class MovieGenreViewSet(ViewSet):
-    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
     @decorators.genre_list_decorator
     def list(self, request):
@@ -56,7 +56,7 @@ class MovieGenreViewSet(ViewSet):
 
 @extend_schema(tags=['Movie'])
 class MovieViewSet(ViewSet):
-    # permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
     @decorators.movie_list_decorator
     def list(self, request):
@@ -123,7 +123,7 @@ class ShowTimeViewSet(ViewSet):
 
 @extend_schema(tags=['Reservation'], responses=ReservationSerializer)
 class ReservationViewSet(ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReservationCustomPermission]
 
     @decorators.reservation_list_decoration
     def list(self, request):
@@ -159,17 +159,17 @@ class ReservationViewSet(ViewSet):
             except Seat.DoesNotExist:
                 return Response({'error': f'seat with id {seat_id} does not exists'})
             reservation.seats.add(seat)
-
-        serializer = ReservationSerializer(reservation)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({'response': 'Created successfully'}, status=status.HTTP_201_CREATED)
 
     @decorators.reservation_cancel_decorator
     def cancel_reservation(self, request, pk=None):
         reservation = get_object_or_404(Reservation, pk=pk, user=request.user)
-
+        self.check_object_permissions(request, reservation)
         if reservation.showtime.show_date < timezone.now().date():
-            return Response({"error": "Cannot cancel a reservation for a past showtime."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Cannot cancel a reservation for a past showtime."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         for seat in reservation.seats.all():
             seat.is_reserved = False
@@ -177,4 +177,4 @@ class ReservationViewSet(ViewSet):
 
         reservation.delete()
 
-        return Response({"message": "Reservation canceled successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"response": "Reservation canceled successfully."}, status=status.HTTP_204_NO_CONTENT)

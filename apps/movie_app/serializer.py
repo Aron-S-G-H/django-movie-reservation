@@ -6,8 +6,8 @@ from drf_spectacular.utils import extend_schema_field
 class MovieGenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieGenre
-        fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at', 'slug')
+        exclude = ('created_at', 'updated_at')
+        read_only_fields = ('id', 'slug')
         extra_kwargs = {'description': {'required': True}}
 
 
@@ -23,8 +23,8 @@ class MovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        exclude = ('slug',)
-        read_only_fields = ('id', 'created_at', 'updated_at')
+        exclude = ('created_at', 'updated_at')
+        read_only_fields = ('id', 'slug')
 
     @extend_schema_field({
         "type": "array",
@@ -53,6 +53,15 @@ class ReservationSerializer(serializers.ModelSerializer):
         model = Reservation
         exclude = ('created_at', 'updated_at')
 
+    @extend_schema_field(
+        {
+            'type': 'object',
+            'properties': {
+                'id': {'type': 'integer'},
+                'full_name': {'type': 'string'}
+            }
+        }
+    )
     def get_user(self, obj):
         return {'id': obj.user.id, 'full_name': obj.user.get_full_name()}
 

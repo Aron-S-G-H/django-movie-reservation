@@ -5,17 +5,15 @@ from django.shortcuts import get_object_or_404
 from .models import CustomUser
 from .serializer import UserSerializer, UserLoginSerializer, UserRegisterSerializer
 from .permissions import UserHasPermissionOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.permissions import AllowAny
 from .utils import get_tokens
 from . import decorators
 
 
 @extend_schema(tags=['Authentication and Authorization'])
 class UserAuthenticationViewSet(ViewSet):
-    permission_classes = [AllowAny]
-
     @decorators.user_login_decorator
     def login(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -47,7 +45,7 @@ class UserAuthenticationViewSet(ViewSet):
 
 @extend_schema(tags=['User account'])
 class UserViewSet(ViewSet):
-    permission_classes = [UserHasPermissionOrReadOnly]
+    permission_classes = [IsAuthenticated, UserHasPermissionOrReadOnly]
 
     @decorators.users_list_decorator
     def list(self, request):
@@ -68,7 +66,7 @@ class UserViewSet(ViewSet):
         serializer = UserSerializer(data=request.data, partial=True)
         if serializer.is_valid():
             serializer.update(instance=instance, validated_data=serializer.validated_data)
-            return Response('Updated successfully', status=status.HTTP_200_OK)
+            return Response({"response": "Updated successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @decorators.user_delete_decorator
@@ -76,4 +74,4 @@ class UserViewSet(ViewSet):
         instance = get_object_or_404(CustomUser, pk=pk)
         self.check_object_permissions(request, instance)
         instance.delete()
-        return Response('Deleted successfully', status=status.HTTP_200_OK)
+        return Response({"response": "Deleted successfully"}, status=status.HTTP_200_OK)
