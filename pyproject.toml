@@ -16,6 +16,10 @@ django-cleanup = "^9.0.0"
 django-jazzmin = "^3.0.1"
 
 
+[tool.poetry.group.dev.dependencies]
+nplusone = "^1.0.0"
+django-debug-toolbar = "^4.4.6"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
