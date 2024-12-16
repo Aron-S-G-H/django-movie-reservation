@@ -18,7 +18,7 @@ class MovieGenreViewSet(ViewSet):
 
     @decorators.genre_list_decorator
     def list(self, request):
-        queryset = MovieGenre.objects.all()
+        queryset = MovieGenre.objects.filter(is_active=True)
         serializer = MovieGenreSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -60,7 +60,7 @@ class MovieViewSet(ViewSet):
 
     @decorators.movie_list_decorator
     def list(self, request):
-        queryset = Movie.objects.all()
+        queryset = Movie.objects.prefetch_related('posters', 'showtimes').all()
         serializer = MovieSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -100,7 +100,7 @@ class MovieViewSet(ViewSet):
         date = request.query_params.get('date', None)
         if date:
             try:
-                movies = Movie.objects.filter(showtimes__show_date=date).distinct()
+                movies = Movie.objects.filter(showtimes__show_date=date).prefetch_related('posters', 'showtimes').distinct()
                 serializer = MovieSerializer(movies, many=True, context={'request': request})
                 return Response(serializer.data)
             except ValidationError:
@@ -116,7 +116,7 @@ class ShowTimeViewSet(ViewSet):
     @decorators.available_seats_decorator
     def available_seats(self, request, pk=None):
         showtime = get_object_or_404(Showtime, pk=pk)
-        available_seats = Seat.objects.filter(showtime=showtime, is_reserved=False)
+        available_seats = Seat.objects.filter(showtime=showtime, is_reserved=False).defer('showtime')
         serializer = SeatSerializer(available_seats, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -127,7 +127,7 @@ class ReservationViewSet(ViewSet):
 
     @decorators.reservation_list_decoration
     def list(self, request):
-        queryset = Reservation.objects.all()
+        queryset = Reservation.objects.select_related('showtime', 'user', 'movie').prefetch_related('seats').all()
         serializer = ReservationSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

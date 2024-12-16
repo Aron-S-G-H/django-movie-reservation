@@ -12,9 +12,13 @@ DATABASES = {
     }
 }
 
-INSTALLED_APPS += ['nplusone.ext.django']
+INSTALLED_APPS += ['nplusone.ext.django', 'debug_toolbar']
 
-MIDDLEWARE += ['nplusone.ext.django.NPlusOneMiddleware']
+MIDDLEWARE += ['nplusone.ext.django.NPlusOneMiddleware', 'debug_toolbar.middleware.DebugToolbarMiddleware']
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 NPLUSONE_LOGGER = logging.getLogger('nplusone')
 NPLUSONE_LOG_LEVEL = logging.WARN
