@@ -16,6 +16,8 @@
 - Using Poetry
 - Fake data
 - Fully api documentation (Swagger ui)
+- Using nplusone for optimizing queries (N + 1)
+- Using django debug toolbar for monitoring 
 
 ## 🛠 Installation
 1. **Clone the repository**
