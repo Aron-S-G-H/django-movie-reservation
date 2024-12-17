@@ -19,6 +19,7 @@ django-jazzmin = "^3.0.1"
 [tool.poetry.group.dev.dependencies]
 nplusone = "^1.0.0"
 django-debug-toolbar = "^4.4.6"
+faker = "^33.1.0"
 
 [build-system]
 requires = ["poetry-core"]
